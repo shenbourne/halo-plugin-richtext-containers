@@ -1,0 +1,18 @@
+apiVersion: plugin.halo.run/v1alpha1
+kind: ExtensionDefinition
+metadata:
+  name: richtext-containers-head
+spec:
+  className: run.halo.richtextcontainers.ContainerHeadProcessor
+  extensionPointName: template-head-processor
+  displayName: 内容容器前台资源
+  description: 为文章和独立页面加载本地 CSS 与 JavaScript。
+---
+apiVersion: plugin.halo.run/v1alpha1
+kind: ReverseProxy
+metadata:
+  name: richtext-containers-frontend-assets
+rules:
+  - path: /frontend/**
+    file:
+      directory: assets

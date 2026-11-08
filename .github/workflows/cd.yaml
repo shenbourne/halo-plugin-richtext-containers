@@ -1,0 +1,17 @@
+name: CD
+on:
+  release:
+    # The initial release uploads the locally validated artifact.
+    if: github.event.release.tag_name != 'v1.0.0'
+    types: [published]
+jobs:
+  release:
+    # The initial release uploads the locally validated artifact.
+    if: github.event.release.tag_name != 'v1.0.0'
+    uses: halo-sigs/reusable-workflows/.github/workflows/plugin-cd.yaml@v5
+    permissions:
+      contents: write
+    with:
+      ui-path: ui
+      pnpm-version: ''
+      skip-appstore-release: true

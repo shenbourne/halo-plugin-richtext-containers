@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-label="富文本内容容器">
+  <rect width="512" height="512" rx="112" fill="#173c50"/>
+  <rect x="88" y="112" width="336" height="292" rx="28" fill="#f4f7f4"/>
+  <path d="M116 112h96v56H88v-28a28 28 0 0 1 28-28Z" fill="#7dd3bd"/>
+  <path d="M212 112h96v56h-96Z" fill="#b8cbc9"/>
+  <path d="M308 112h88a28 28 0 0 1 28 28v28H308Z" fill="#d9e5e0"/>
+  <rect x="120" y="204" width="272" height="112" rx="14" fill="#e1eeea" stroke="#468c84" stroke-width="6"/>
+  <path d="M148 236h156m-156 28h216m-216 28h124" fill="none" stroke="#27546a" stroke-width="12" stroke-linecap="round"/>
+  <path d="M128 352h112m28 0h72" fill="none" stroke="#27546a" stroke-width="12" stroke-linecap="round"/>
+  <circle cx="378" cy="352" r="15" fill="#df975c"/>
+</svg>

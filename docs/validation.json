@@ -1,0 +1,12 @@
+{
+  "version": "1.0.0",
+  "haloBaseline": "2.27.1",
+  "compatibility": "~2.27.1",
+  "artifact": "richtext-containers-1.0.0.jar",
+  "bytes": 78627,
+  "sha256": "7b9ac1d58272790b23b81196a5891c329c640a1a8a53a594dbb64a644e8829b8",
+  "frontendTests": 44,
+  "backendTests": 20,
+  "archiveVerified": true,
+  "haloLifecycleVerified": true
+}

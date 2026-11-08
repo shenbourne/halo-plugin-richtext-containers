@@ -1,0 +1,20 @@
+apiVersion: plugin.halo.run/v1alpha1
+kind: Plugin
+metadata:
+  name: richtext-containers
+spec:
+  enabled: false
+  version: ${version}
+  requires: "~2.27.1"
+  author:
+    name: shenbourne
+    website: https://github.com/shenbourne
+  displayName: 富文本内容容器
+  description: 在默认富文本编辑器中提供原生嵌套的选项卡、幻灯片、提示容器和脚注，并为文章与独立页面加载前台交互资源。
+  logo: /logo.svg
+  homepage: https://github.com/shenbourne/halo-plugin-richtext-containers
+  repo: https://github.com/shenbourne/halo-plugin-richtext-containers
+  issues: https://github.com/shenbourne/halo-plugin-richtext-containers/issues
+  license:
+    - name: GPL-3.0
+      url: https://www.gnu.org/licenses/gpl-3.0.html

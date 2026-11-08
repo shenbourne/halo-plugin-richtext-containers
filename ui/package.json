@@ -1,0 +1,43 @@
+{
+  "name": "halo-richtext-containers-ui",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "vue-tsc --noEmit && vite build && vite build --config vite.frontend.config.ts",
+    "build:console": "vite build",
+    "test": "vitest run",
+    "typecheck": "vue-tsc --noEmit",
+    "dev": "vite build --watch"
+  },
+  "dependencies": {
+    "@halo-dev/api-client": "2.27.0",
+    "@halo-dev/components": "2.27.0",
+    "@halo-dev/richtext-editor": "2.27.0",
+    "@halo-dev/ui-shared": "2.27.0",
+    "reveal.js": "5.2.1",
+    "vue": "3.5.44"
+  },
+  "devDependencies": {
+    "@halo-dev/ui-plugin-bundler-kit": "2.27.0",
+    "@playwright/test": "^1.56.0",
+    "@tiptap/core": "^3.0.0",
+    "@tiptap/pm": "^3.0.0",
+    "@tiptap/vue-3": "^3.0.0",
+    "@types/node": "^24.0.0",
+    "@types/reveal.js": "^5.2.0",
+    "@vitejs/plugin-vue": "6.0.2",
+    "@vueuse/core": "^15.0.0",
+    "axios": "^1.20.0",
+    "fitty": "2.4.2",
+    "jsdom": "^26.1.0",
+    "katex": "^0.16.25",
+    "pinia": "^4.1.0",
+    "typescript": "~5.9.3",
+    "vite": "^7.1.0",
+    "vitest": "^3.2.4",
+    "vue-router": "~5.1.0",
+    "vue-tsc": "^3.1.0"
+  },
+  "packageManager": "pnpm@11.25.0"
+}

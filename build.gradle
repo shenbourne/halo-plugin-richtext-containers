@@ -1,0 +1,200 @@
+plugins {
+    id 'java'
+    id 'run.halo.plugin.devtools' version '0.6.2'
+}
+
+group = 'run.halo.richtextcontainers'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation platform('run.halo.tools.platform:plugin:2.27.1')
+    compileOnly 'run.halo.app:api'
+
+    testImplementation 'run.halo.app:api'
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+    testImplementation 'org.thymeleaf:thymeleaf'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+    options.release = 21
+}
+
+tasks.named('test') {
+    useJUnitPlatform()
+    testLogging {
+        events 'passed', 'skipped', 'failed'
+    }
+}
+
+def skipUi = providers.gradleProperty('skipUi').isPresent()
+def uiDirectory = layout.projectDirectory.dir('ui')
+
+tasks.named('clean') {
+    delete uiDirectory.dir('build/dist'), uiDirectory.dir('build/frontend')
+}
+
+tasks.register('buildUi', Exec) {
+    group = 'build'
+    description = 'Build the console extension and frontend assets using pnpm build.'
+    workingDir uiDirectory
+    if (System.getProperty('os.name').toLowerCase().contains('windows')) {
+        commandLine 'cmd', '/d', '/c', 'pnpm', 'build'
+    } else {
+        commandLine 'pnpm', 'build'
+    }
+    doFirst {
+        project.delete uiDirectory.dir('build/dist'), uiDirectory.dir('build/frontend')
+    }
+    inputs.dir(uiDirectory.dir('src'))
+    inputs.files(fileTree(uiDirectory) {
+        include '*.json', '*.yaml', '*.ts', '*.js', '*.cjs', '*.mjs'
+    })
+    outputs.dirs(uiDirectory.dir('build/dist'), uiDirectory.dir('build/frontend'))
+}
+
+tasks.named('processResources') {
+    inputs.property('pluginVersion', project.version.toString())
+    filesMatching('plugin.yaml') {
+        expand(version: project.version.toString())
+    }
+    if (!skipUi) {
+        dependsOn tasks.named('buildUi')
+        doFirst {
+            ['build/dist/main.js', 'build/dist/style.css', 'build/frontend/frontend.js',
+             'build/frontend/frontend.css'].each { path ->
+                if (!uiDirectory.file(path).asFile.isFile()) {
+                    throw new GradleException("Missing UI output: ui/${path}")
+                }
+            }
+        }
+    }
+    doFirst {
+        project.delete layout.buildDirectory.dir('resources/main/console'),
+            layout.buildDirectory.dir('resources/main/assets')
+    }
+    // -PskipUi packages existing outputs, if any, without invoking pnpm.
+    // A clean backend-only build is for verification, not a complete release.
+    from(uiDirectory.dir('build/dist')) {
+        into 'console'
+    }
+    from(uiDirectory.dir('build/frontend')) {
+        into 'assets'
+    }
+}
+
+tasks.register('verifyPackagedAssets') {
+    group = 'verification'
+    description = 'Verifies Halo 2.27.1 IIFE console files and rejects stale ESM output.'
+    dependsOn tasks.named('processResources')
+    doLast {
+        def consoleDirectory = layout.buildDirectory.dir('resources/main/console').get().asFile
+        if (!consoleDirectory.isDirectory() && skipUi) {
+            return
+        }
+        def missing = ['main.js', 'style.css'].findAll {
+            !new File(consoleDirectory, it).isFile()
+        }
+        if (!missing.isEmpty()) {
+            throw new GradleException("Missing Halo IIFE console files: ${missing}")
+        }
+        def stale = fileTree(consoleDirectory) {
+            include 'ui-plugin.json', 'manifest.json', 'main.*.js', 'assets/**'
+        }.files
+        if (!stale.isEmpty()) {
+            throw new GradleException("Stale ESM console files detected: ${stale*.name.sort()}")
+        }
+    }
+}
+
+tasks.named('jar') {
+    dependsOn tasks.named('verifyPackagedAssets')
+    manifest {
+        attributes('Plugin-Main-Class': 'run.halo.richtextcontainers.RichtextContainersPlugin')
+    }
+    from(['LICENSE', 'THIRD-PARTY-NOTICES.md']) {
+        into 'META-INF'
+    }
+    preserveFileTimestamps = false
+    reproducibleFileOrder = true
+}
+
+tasks.named('generatePluginComponentsIdx') {
+    notCompatibleWithConfigurationCache('Halo DevTools reads the project during index generation.')
+}
+
+tasks.register('testUi', Exec) {
+    group = 'verification'
+    description = 'Run UI unit tests and the real-browser reader test.'
+    workingDir uiDirectory
+    mustRunAfter tasks.named('buildUi')
+    if (System.getProperty('os.name').toLowerCase().contains('windows')) {
+        commandLine 'cmd', '/d', '/c', 'pnpm', 'test'
+    } else {
+        commandLine 'pnpm', 'test'
+    }
+}
+
+tasks.register('verifyPluginArchive') {
+    group = 'verification'
+    description = 'Verify final JAR metadata, version, license, logo and runtime resources.'
+    dependsOn tasks.named('jar')
+    doLast {
+        def pluginVersion = project.version.toString()
+        if (!(pluginVersion ==~ /(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)(?:-[0-9A-Za-z.-]+)?/)) {
+            throw new GradleException('Plugin version must use MAJOR.MINOR.PATCH.')
+        }
+        def archive = tasks.named('jar').get().archiveFile.get().asFile
+        new java.util.zip.ZipFile(archive).withCloseable { zip ->
+            def required = ['plugin.yaml', 'META-INF/MANIFEST.MF', 'META-INF/LICENSE',
+                'META-INF/THIRD-PARTY-NOTICES.md', 'logo.svg',
+                'extensions/richtext-containers.yaml', 'console/main.js',
+                'console/style.css', 'assets/frontend.js', 'assets/frontend.css']
+            required.each { path ->
+                if (zip.getEntry(path) == null) {
+                    throw new GradleException("Missing release resource: ${path}")
+                }
+            }
+            def descriptor = zip.getInputStream(zip.getEntry('plugin.yaml')).getText('UTF-8')
+            def packagedVersion = descriptor.readLines().find { it.trim().startsWith('version:') }
+                ?.trim()?.substring('version:'.length())?.trim()?.replace('"', '')?.replace("'", '')
+            if (packagedVersion != pluginVersion) {
+                throw new GradleException('Packaged plugin.yaml version differs from Gradle version.')
+            }
+            ['logo:', 'homepage:', 'repo:', 'issues:', 'license:'].each { field ->
+                if (!descriptor.contains(field)) throw new GradleException("Missing metadata: ${field}")
+            }
+            def manifest = new java.util.jar.Manifest(zip.getInputStream(zip.getEntry('META-INF/MANIFEST.MF')))
+            if (manifest.mainAttributes.getValue('Implementation-Version') != pluginVersion
+                || manifest.mainAttributes.getValue('Plugin-Main-Class') != 'run.halo.richtextcontainers.RichtextContainersPlugin') {
+                throw new GradleException('Invalid plugin manifest version or entry point.')
+            }
+            zip.entries().each { entry ->
+                if (entry.name ==~ /(?i).*(?:\.env|\.key|\.pem|\.p12|\.pfx)$/
+                    || entry.name.startsWith('work/') || entry.name.startsWith('.local/')) {
+                    throw new GradleException("Unexpected private release file: ${entry.name}")
+                }
+            }
+        }
+    }
+}
+
+tasks.named('check') {
+    if (!skipUi) {
+        dependsOn tasks.named('testUi'), tasks.named('verifyPluginArchive')
+    }
+}
+
+halo {
+    version = '2.27.1'
+}
