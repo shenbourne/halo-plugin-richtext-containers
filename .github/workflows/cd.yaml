@@ -1,17 +1,96 @@
-name: CD
+name: Build and publish release
+
 on:
-  release:
-    # The initial release uploads the locally validated artifact.
-    if: github.event.release.tag_name != 'v1.0.0'
-    types: [published]
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: richtext-release-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
-  release:
-    # The initial release uploads the locally validated artifact.
-    if: github.event.release.tag_name != 'v1.0.0'
-    uses: halo-sigs/reusable-workflows/.github/workflows/plugin-cd.yaml@v5
+  build:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Validate release version
+        id: version
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ "$GITHUB_EVENT_NAME" == push ]]; then
+            if [[ ! "$GITHUB_REF_NAME" =~ ^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ || "$GITHUB_REF_NAME" == v1.0.0 ]]; then
+              echo 'Expected a new stable version tag, such as v1.0.1.' >&2
+              exit 1
+            fi
+            version="${GITHUB_REF_NAME#v}"
+          else
+            version="$(sed -n 's/^version=//p' gradle.properties)"
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - uses: pnpm/action-setup@v4
+        with:
+          package_json_file: ui/package.json
+      - uses: gradle/actions/setup-gradle@v4
+      - run: pnpm --dir ui install --frozen-lockfile
+      - run: pnpm --dir ui exec playwright install --with-deps chromium
+      - name: Build and test
+        run: bash gradlew clean build "-Pversion=$RELEASE_VERSION"
+        env:
+          PLAYWRIGHT_CHANNEL: chromium
+          RELEASE_VERSION: ${{ steps.version.outputs.version }}
+      - name: Stage verified installer
+        shell: bash
+        env:
+          RELEASE_VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          set -euo pipefail
+          mkdir -p release-assets
+          name="richtext-containers-$RELEASE_VERSION.jar"
+          cp "build/libs/$name" release-assets/
+          (cd release-assets && sha256sum "$name" > SHA256SUMS && sha256sum -c SHA256SUMS)
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-assets
+          path: release-assets/
+          if-no-files-found: error
+
+  publish:
+    if: github.event_name == 'push' && github.ref_type == 'tag'
+    needs: build
+    runs-on: ubuntu-latest
     permissions:
       contents: write
-    with:
-      ui-path: ui
-      pnpm-version: ''
-      skip-appstore-release: true
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: release-assets
+          path: release-assets
+      - name: Publish a new GitHub Release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_VERSION: ${{ needs.build.outputs.version }}
+        run: |
+          set -euo pipefail
+          (cd release-assets && sha256sum -c SHA256SUMS)
+          gh release create "$GITHUB_REF_NAME" \
+            "release-assets/richtext-containers-$RELEASE_VERSION.jar" \
+            release-assets/SHA256SUMS \
+            --verify-tag --title "富文本内容容器 $RELEASE_VERSION" --generate-notes
