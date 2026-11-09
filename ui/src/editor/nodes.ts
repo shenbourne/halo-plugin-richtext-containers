@@ -7,7 +7,7 @@ import {
   type AnyExtension,
   type VueEditor,
 } from '@halo-dev/richtext-editor';
-import { createHint, createSlides, createTabs } from './model';
+import { createHint, createSlides, createSteps, createTabs } from './model';
 import { insertContainer, insertFootnote, insertFootnoteReference } from './commands';
 import RcTabs from './views/RcTabs.vue';
 import RcTab from './views/RcTab.vue';
@@ -15,12 +15,16 @@ import RcSlides from './views/RcSlides.vue';
 import RcGroup from './views/RcGroup.vue';
 import RcSlide from './views/RcSlide.vue';
 import RcHint from './views/RcHint.vue';
+import RcSteps from './views/RcSteps.vue';
+import RcStep from './views/RcStep.vue';
+import StepsIcon from './views/StepsIcon.vue';
 import RcFootnote from './views/RcFootnote.vue';
 import RcFootnoteRef from './views/RcFootnoteRef.vue';
 import ToolboxItem from './views/ToolboxItem.vue';
 import ContainerIcon from './views/ContainerIcon.vue';
 import FootnoteIcon from './views/FootnoteIcon.vue';
 import './style.css';
+import '../steps.css';
 
 const KINDS = ['important','info','note','tip','warning','caution','details'] as const;
 const THEMES = ['auto','light','dark'] as const;
@@ -138,6 +142,49 @@ const RcSlideNode = Node.create({
   parseHTML() { return [{ tag: 'div[data-rc-slide]', getAttrs: el => (el as HTMLElement).getAttribute('data-rc-slide') === 'v1' ? {} : false }]; },
   renderHTML({ HTMLAttributes }) { return ['div', { ...HTMLAttributes, 'data-rc-slide': 'v1' }, 0]; },
   addNodeView() { return VueNodeViewRenderer(RcSlide); },
+});
+
+const RcStepsNode = Node.create({
+  name: 'rcSteps',
+  group: 'block',
+  content: 'rcStep+',
+  isolating: true,
+  addAttributes() { return { numbered: { default: true }, start: { default: 1 } }; },
+  parseHTML() {
+    const list = (el: HTMLElement) => el.querySelector(':scope > :is(ol, ul)') as HTMLOListElement | null;
+    return [{
+      tag: 'div[data-rc-steps="v1"]',
+      getAttrs: el => ({ numbered: list(el)?.localName !== 'ul', start: list(el)?.start ?? 1 }),
+      contentElement: el => list(el) ?? el,
+    }];
+  },
+  renderHTML({ node }) {
+    return ['div', { 'data-rc-steps': 'v1' },
+      [node.attrs.numbered ? 'ol' : 'ul', node.attrs.numbered && node.attrs.start !== 1 ? { start: node.attrs.start } : {}, 0]];
+  },
+  addNodeView() { return VueNodeViewRenderer(RcSteps); },
+});
+
+const RcStepNode = Node.create({
+  name: 'rcStep',
+  content: 'block+',
+  isolating: true,
+  addAttributes() { return { title: { default: '' } }; },
+  parseHTML() {
+    return [{
+      tag: 'li', context: 'rcSteps/', priority: 100,
+      getAttrs: el => ({ title: safeText(el.getAttribute('data-rc-step-title')) }),
+      contentElement: el => (el.querySelector(':scope > [data-rc-step-body]') as HTMLElement) ?? el,
+    }];
+  },
+  renderHTML({ node }) {
+    const title = safeText(node.attrs.title);
+    const body: ['div', Record<string, string>, 0] = ['div', { 'data-rc-step-body': '' }, 0];
+    return title
+      ? ['li', { 'data-rc-step-title': title }, ['p', { class: 'rc-step__title' }, title], body]
+      : ['li', body];
+  },
+  addNodeView() { return VueNodeViewRenderer(RcStep); },
 });
 
 const RcHintNode = Node.create({
@@ -264,6 +311,7 @@ const Menus = Extension.create({
           { priority: 302, component: ToolboxItem, props: { editor, icon: ContainerIcon, title: '提示容器', action: () => insertContainer(editor, createHint) } },
           { priority: 303, component: ToolboxItem, props: { editor, icon: FootnoteIcon, title: '脚注', action: () => insertFootnote(editor) } },
           { priority: 304, component: ToolboxItem, props: { editor, icon: FootnoteIcon, title: '脚注引用', action: () => insertFootnoteReference(editor) } },
+          { priority: 305, component: ToolboxItem, props: { editor, icon: StepsIcon, title: '步骤', action: () => insertContainer(editor, createSteps) } },
         ];
       },
       getCommandMenuItems() {
@@ -273,6 +321,7 @@ const Menus = Extension.create({
           { priority: 302, icon: ContainerIcon, title: '提示容器', keywords: ['hint', 'tishi', '提示'], command: ({ editor, range }: any) => insertContainer(editor, createHint, range) },
           { priority: 303, icon: FootnoteIcon, title: '脚注', keywords: ['footnote', 'jiaozhu', '脚注'], command: ({ editor, range }: any) => insertFootnote(editor, range) },
           { priority: 304, icon: FootnoteIcon, title: '脚注引用', keywords: ['footnote reference', 'jiaozhu yinyong', '脚注引用'], command: ({ editor, range }: any) => insertFootnoteReference(editor, undefined, range) },
+          { priority: 305, icon: StepsIcon, title: '步骤', keywords: ['steps', 'buzhou', '步骤'], command: ({ editor, range }: any) => insertContainer(editor, createSteps, range) },
         ];
       },
     };
@@ -280,5 +329,5 @@ const Menus = Extension.create({
 });
 
 export function createContainerExtensions(): AnyExtension[] {
-  return [RcTabsNode, RcTabNode, RcSlidesNode, RcGroupNode, RcSlideNode, RcHintNode, RcFootnoteNode, RcFootnoteRefNode, StableIds, Menus];
+  return [RcTabsNode, RcTabNode, RcSlidesNode, RcGroupNode, RcSlideNode, RcHintNode, RcFootnoteNode, RcFootnoteRefNode, RcStepsNode, RcStepNode, StableIds, Menus];
 }

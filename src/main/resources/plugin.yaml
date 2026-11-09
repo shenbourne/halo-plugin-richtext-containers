@@ -10,7 +10,7 @@ spec:
     name: shenbourne
     website: https://github.com/shenbourne
   displayName: 富文本内容容器
-  description: 在默认富文本编辑器中提供原生嵌套的选项卡、幻灯片、提示容器和脚注，并为文章与独立页面加载前台交互资源。
+  description: 在默认富文本编辑器中提供可嵌套的选项卡、幻灯片、提示容器、脚注和步骤，支持文章与独立页面。
   logo: /logo.svg
   homepage: https://github.com/shenbourne/halo-plugin-richtext-containers
   repo: https://github.com/shenbourne/halo-plugin-richtext-containers

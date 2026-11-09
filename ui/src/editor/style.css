@@ -1,5 +1,5 @@
 .rc-editor-container { --rc-border: #d8dde6; --rc-surface: #fff; --rc-muted: #f5f7fb; --rc-ink: #34415a; min-width: 0; max-width: 100%; border: 1px solid var(--rc-border); border-radius: 8px; padding: 10px; margin: 12px 0; background: var(--rc-surface); color: inherit; }
-.rc-editor-container :is(.rc-tab,.rc-group,.rc-slide) { border-style: dashed; margin: 8px 0; padding: 8px; }
+.rc-editor-container :is(.rc-tab,.rc-group,.rc-slide,.rc-step) { border-style: dashed; margin: 8px 0; padding: 8px; }
 .rc-editor-container > .rc-meta { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; font: 13px/1.6 system-ui,sans-serif; color: var(--rc-ink); background: var(--rc-muted); border-radius: 5px; padding: 8px; user-select: none; }
 .rc-editor-container > .rc-meta label { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 4px; min-width: 0; }
 .rc-editor-container > .rc-meta :is(input:not([type=checkbox]),select) { box-sizing: border-box; min-width: 0; max-width: 100%; width: 150px; background: var(--rc-surface); color: var(--rc-ink); border: 1px solid var(--rc-border); border-radius: 4px; padding: 3px 6px; }
@@ -24,12 +24,12 @@
 .rc-page-list { position: relative; margin-top: 8px; padding-inline-start: 19px; }
 .rc-page-list::before { content: ''; position: absolute; inset-inline-start: 5px; inset-block: 23px 12px; width: 1px; background: var(--rc-border); pointer-events: none; }
 .rc-page-list > .rc-body { display: flow-root; }
-.rc-page-list > .rc-body > .rc-slide { position: relative; margin-block: 0 8px; }
-.rc-page-list > .rc-body > .rc-slide:last-child { margin-bottom: 0; }
-.rc-page-list > .rc-body > .rc-slide::before,
+.rc-page-list > .rc-body > :is(.rc-slide,.rc-step) { position: relative; margin-block: 0 8px; }
+.rc-page-list > .rc-body > :is(.rc-slide,.rc-step):last-child { margin-bottom: 0; }
+.rc-page-list > .rc-body > :is(.rc-slide,.rc-step)::before,
 .rc-page-list > .rc-page-add::before,
 .rc-section-add::before { content: ''; position: absolute; width: 7px; height: 7px; border-radius: 50%; background: #6483ad; pointer-events: none; }
-.rc-page-list > .rc-body > .rc-slide::before { inset-inline-start: -18px; top: 19px; }
+.rc-page-list > .rc-body > :is(.rc-slide,.rc-step)::before { inset-inline-start: -18px; top: 19px; }
 .rc-page-list > .rc-page-add::before { inset-inline-start: -17px; top: 50%; transform: translateY(-50%); }
 .rc-section-add::before { inset-inline-start: 9px; top: 50%; transform: translateY(-50%); }
 .rc-editor-container.rc-footnote { border-inline-start: 4px solid #0f766e; }

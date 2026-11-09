@@ -1,11 +1,14 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-label="富文本内容容器">
-  <rect width="512" height="512" rx="112" fill="#173c50"/>
-  <rect x="88" y="112" width="336" height="292" rx="28" fill="#f4f7f4"/>
-  <path d="M116 112h96v56H88v-28a28 28 0 0 1 28-28Z" fill="#7dd3bd"/>
-  <path d="M212 112h96v56h-96Z" fill="#b8cbc9"/>
-  <path d="M308 112h88a28 28 0 0 1 28 28v28H308Z" fill="#d9e5e0"/>
-  <rect x="120" y="204" width="272" height="112" rx="14" fill="#e1eeea" stroke="#468c84" stroke-width="6"/>
-  <path d="M148 236h156m-156 28h216m-216 28h124" fill="none" stroke="#27546a" stroke-width="12" stroke-linecap="round"/>
-  <path d="M128 352h112m28 0h72" fill="none" stroke="#27546a" stroke-width="12" stroke-linecap="round"/>
-  <circle cx="378" cy="352" r="15" fill="#df975c"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96" role="img" aria-labelledby="logo-title">
+  <title id="logo-title">富文本内容容器</title>
+  <defs>
+    <linearGradient id="tile" x1="0" y1="0" x2="1" y2="1" gradientUnits="objectBoundingBox">
+      <stop stop-color="#4e9bad"/>
+      <stop offset="1" stop-color="#5a66a8"/>
+    </linearGradient>
+  </defs>
+  <rect width="96" height="96" rx="17" fill="url(#tile)"/>
+  <g fill="none" stroke="#fff" stroke-width="5" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="23" y="25" width="50" height="46" rx="8"/>
+    <path d="M23 40h50M33 33h11m-10 18h28m-28 10h18"/>
+  </g>
 </svg>

@@ -1,6 +1,7 @@
 import Reveal from 'reveal.js';
 import './reveal-scoped.css';
 import './style.css';
+import '../steps.css';
 import { dismissDetachedFootnotePreview, mountFootnotes } from './footnotes';
 
 const ROOT_SELECTOR = '[data-rc-tabs="v1"], [data-rc-slides="v1"], [data-rc-hint="v1"]';

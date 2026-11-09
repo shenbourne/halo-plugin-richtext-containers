@@ -56,7 +56,7 @@ function preserveReorderedSelection(editor: VueEditor, tr: VueEditor['state']['t
       const oldPos = endpoint.before(depth);
       if (oldPos < from) break;
       const node = endpoint.node(depth);
-      if (node.type.name !== 'rcTab' && node.type.name !== 'rcSlide') continue;
+      if (!['rcTab', 'rcSlide', 'rcStep'].includes(node.type.name)) continue;
       let movedPos: number | undefined;
       tr.doc.nodesBetween(from, to, (candidate, pos) => {
         if (candidate === node) movedPos = pos;
@@ -95,10 +95,17 @@ export function addTab(editor: VueEditor, tabsPos: number): boolean {
   return dispatch(editor, editor.state.tr.insert(at, tab));
 }
 
+export function appendStep(editor: VueEditor, pos: number): boolean {
+  const steps = nodeAt(editor, pos);
+  if (steps?.type.name !== 'rcSteps' || !steps.firstChild) return false;
+  const item = editor.state.schema.nodes.rcStep.createAndFill();
+  return item ? dispatch(editor, editor.state.tr.insert(pos + steps.nodeSize - 1, item)) : false;
+}
+
 export function removeItem(editor: VueEditor, itemPos: number, confirmed = false): boolean {
   const item = nodeAt(editor, itemPos);
-  if (!item || !['rcTab', 'rcSlide'].includes(item.type.name) || !confirmed) return false;
-  const parentName = item.type.name === 'rcTab' ? 'rcTabs' : 'rcGroup';
+  if (!item || !['rcTab', 'rcSlide', 'rcStep'].includes(item.type.name) || !confirmed) return false;
+  const parentName = item.type.name === 'rcStep' ? 'rcSteps' : item.type.name === 'rcTab' ? 'rcTabs' : 'rcGroup';
   const parentPos = ancestorPos(editor, itemPos, parentName);
   const parent = nodeAt(editor, parentPos);
   if (!parent || parent.childCount <= 1) return false;
@@ -114,8 +121,8 @@ export function removeItem(editor: VueEditor, itemPos: number, confirmed = false
 
 export function moveItem(editor: VueEditor, itemPos: number, direction: -1 | 1): boolean {
   const item = nodeAt(editor, itemPos);
-  if (!item || !['rcTab', 'rcSlide', 'rcGroup'].includes(item.type.name)) return false;
-  const parentName = item.type.name === 'rcTab' ? 'rcTabs' : item.type.name === 'rcGroup' ? 'rcSlides' : 'rcGroup';
+  if (!item || !['rcTab', 'rcSlide', 'rcGroup', 'rcStep'].includes(item.type.name)) return false;
+  const parentName = item.type.name === 'rcStep' ? 'rcSteps' : item.type.name === 'rcTab' ? 'rcTabs' : item.type.name === 'rcGroup' ? 'rcSlides' : 'rcGroup';
   const parentPos = ancestorPos(editor, itemPos, parentName);
   const parent = nodeAt(editor, parentPos);
   if (!parent) return false;
@@ -200,7 +207,7 @@ export function updateMetadata(editor: VueEditor, pos: number, attrs: Record<str
   } else if (name === 'rcFootnote' || name === 'rcFootnoteRef') {
     next.key = text(next.key, '', 96);
     if (name === 'rcFootnote') next.name = text(next.name, '', 96).trim();
-  } else if (name === 'rcSlide') {
+  } else if (name === 'rcSlide' || name === 'rcStep') {
     next.title = text(next.title);
   } else if (name === 'rcSlides') {
     next.theme = oneOf(next.theme, ['auto','light','dark'] as const, 'auto');

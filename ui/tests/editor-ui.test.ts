@@ -29,6 +29,47 @@ async function clickToolbox(editor: VueEditor, index: number) {
 }
 
 describe('real Vue NodeViews on the current Halo editor', () => {
+  it('reopens legacy steps as editable cards and keeps nested and ordinary lists intact', async () => {
+    const { editor, host } = await fixture();
+    await clickToolbox(editor, 5);
+    const cards = () => host.querySelectorAll('.rc-step');
+    expect(cards()).toHaveLength(1);
+    editor.commands.setContent('<div data-rc-steps="v1"><ol start="3"><li><p><strong>安装</strong></p><ul><li><p>嵌套列表</p></li></ul></li><li><p>启动</p></li></ol></div><ul><li><p>普通列表</p></li></ul>');
+    await nextTick();
+    expect(cards()).toHaveLength(2);
+    expect(cards()[0].querySelector('ul > li')?.textContent).toContain('嵌套列表');
+    expect(editor.getJSON().content).toContainEqual(expect.objectContaining({ type: 'bulletList' }));
+    expect(editor.getHTML()).toContain('<ol start="3">');
+    const steps = host.querySelector('[data-rc-steps="v1"]')!;
+    const click = async (root: Element, label: string) => {
+      root.querySelector<HTMLButtonElement>(`button[aria-label="${label}"]`)!.click();
+      await nextTick();
+    };
+    await click(steps, '添加步骤');
+    expect(cards()).toHaveLength(3);
+    await click(cards()[2], '删除步骤');
+    expect(cards()).toHaveLength(2);
+    const title = cards()[0].querySelector('input')!;
+    title.value = '准备';
+    title.dispatchEvent(new Event('change', { bubbles: true }));
+    await nextTick();
+    await click(cards()[0], '后移步骤');
+    expect(cards()[0].textContent).toContain('启动');
+    expect(cards()[1].textContent).toContain('安装');
+    const select = steps.querySelector('select')!;
+    select.value = 'bulletList';
+    select.dispatchEvent(new Event('change', { bubbles: true }));
+    await nextTick();
+    const html = editor.getHTML();
+    expect(html).toContain('<div data-rc-steps="v1"><ul>');
+    expect(html).toContain('<p class="rc-step__title">准备</p>');
+    expect(html).not.toContain('添加步骤');
+    editor.commands.setContent(html);
+    await nextTick();
+    expect(cards()).toHaveLength(2);
+    expect(cards()[1].querySelector('input')?.value).toBe('准备');
+    expect(cards()[1].querySelector(':scope > .rc-body strong')?.textContent).toBe('安装');
+  });
   it.each([[0, 'rcTabs', '.rc-tabs', 'rcTab'], [1, 'rcSlides', '.rc-slides', 'rcSlide'], [2, 'rcHint', '.rc-hint', 'rcHint'], [3, 'rcFootnote', '.rc-footnote', 'rcFootnote']])('toolbox %s click inserts an editable body without another editor', async (index, root, selector, body) => {
     const { editor, host } = await fixture();
     await clickToolbox(editor, Number(index));

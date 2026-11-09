@@ -2,7 +2,7 @@
   <NodeViewWrapper as="div" class="rc-editor-container rc-slide" data-rc-slide="v1">
     <div class="rc-meta" contenteditable="false">
       <strong>页 {{ location.index + 1 }}</strong>
-      <label>标题<input :value="node.attrs.title" maxlength="180" @change="setTitle" placeholder="留空则前台不显示" /></label>
+      <label>标题<input :value="node.attrs.title" maxlength="180" @change="setTitle" /></label>
       <button type="button" :disabled="groupLocation.index <= 0" @mousedown.prevent @click="moveGroup(-1)">移至上一节</button>
       <button type="button" :disabled="groupLocation.index >= groupLocation.count - 1" @mousedown.prevent @click="moveGroup(1)">移至下一节</button>
       <RcItemActions :index="location.index" :count="location.count" item="页" @move="move" @remove="remove" />

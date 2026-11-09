@@ -24,6 +24,12 @@ export function createSlides(): JSONContent {
 export function createHint(): JSONContent {
   return { type: 'rcHint', attrs: { id: id('hint'), title: '', kind: 'info', open: false }, content: [{ type: 'paragraph' }] };
 }
+export function createSteps(): JSONContent {
+  return {
+    type: 'rcSteps',
+    content: [{ type: 'rcStep', content: [{ type: 'paragraph' }] }],
+  };
+}
 export function createFootnote(): JSONContent {
   const key = id('note');
   return {
